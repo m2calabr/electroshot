@@ -33,13 +33,6 @@ TargetWindow.prototype.initialize = function(task, onDone) {
     }
   };
 
-  /*
-  ipc.on('jigsawDone', function() {
-    console.log('Got jigsawDone');
-    self.capture(false, done);
-  });
-  */
-
   if (!task.debug) {
     if (!dres) {
       dres = display.getPrimaryDisplay().workAreaSize;
@@ -137,8 +130,9 @@ TargetWindow.prototype.setUpPreloadedListener = function(task, onDone) {
     log.debug('IPC', 'window-loaded');
     log.debug('SEND', 'ensure-rendered');
 
-    ipc.once('variable-signel',function(){
-      log.debug('IPC', 'variable-signel');
+    ipc.once('variable-signal',function(event,info){
+      log.debug('IPC', 'variable-signal');
+      log.debug('retries', info.retries);
       return onDone(true);
     });
 
@@ -279,16 +273,6 @@ TargetWindow.prototype.insertCSS = function(css) {
 
 TargetWindow.prototype.executeJS = function(js) {
   this.window.webContents.executeJavaScript(js);
-};
-
-TargetWindow.prototype.waitFor = function(v) {
-  this.window.webContents.executeJavaScript(
-      `Object.keys(document.location)`,
-      false,
-      res => {
-       console.log(res);
-       });
-  console.log("done waitfor");
 };
 
 TargetWindow.prototype.close = function() {

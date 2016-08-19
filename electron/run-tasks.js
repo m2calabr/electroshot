@@ -1,6 +1,7 @@
 var TargetWindow = require('./target-window');
 var parallel = require('miniq');
 var log = require('minilog')('electron');
+var startTime = Date.now();
 
 module.exports = function(tasks) {
   var targetWindow = new TargetWindow();
@@ -21,10 +22,9 @@ module.exports = function(tasks) {
             targetWindow.executeJS(js);
           });
         }
-        
-        targetWindow.waitFor('renderingDone');
 
         if (flag) {
+          log.debug('Elapsed Time:' + (Date.now() - startTime)/1000);
           if (task.format === 'pdf') {
             targetWindow.pdf(done);
           } else if (task.selector) {

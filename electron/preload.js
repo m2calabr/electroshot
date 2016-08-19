@@ -11,8 +11,8 @@ function MTQCheckDone(){
   if (renderingDone===false && doneRetries<maxRetries) {
     doneRetries++; setTimeout(MTQCheckDone, 100);
   } else {
-    console.log('SEND', 'variable-changed');
-    ipc.send('variable-signel');
+    console.log('SEND', 'variable-signal');
+    ipc.send('variable-signal',{'retries':doneRetries});
   }
 };
 
