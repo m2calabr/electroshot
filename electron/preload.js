@@ -1,6 +1,23 @@
 var ipc = require('ipc');
 var webFrame = require('web-frame');
 
+console.log("In preload");
+
+function MTQCheckDone(){
+  console.log(renderingDone);
+  console.log(doneRetries);
+  console.log(maxRetries);
+
+  if (renderingDone===false && doneRetries<maxRetries) {
+    doneRetries++; setTimeout(MTQCheckDone, 100);
+  } else {
+    console.log('SEND', 'variable-changed');
+    ipc.send('variable-signel');
+  }
+};
+
+MTQCheckDone();
+
 function waitFor(num, onDone) {
   if (num) {
     setTimeout(onDone, num);

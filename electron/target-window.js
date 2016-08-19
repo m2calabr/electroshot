@@ -2,6 +2,8 @@ var fs = require('fs'),
     os = require('os'),
     path = require('path');
 
+//const ipcMain = require('electron');
+
 var ipc = require('ipc'),
     BrowserWindow = require('browser-window'),
     xtend = require('xtend');
@@ -30,6 +32,13 @@ TargetWindow.prototype.initialize = function(task, onDone) {
       'page-visibility': true,
     }
   };
+
+  /*
+  ipc.on('jigsawDone', function() {
+    console.log('Got jigsawDone');
+    self.capture(false, done);
+  });
+  */
 
   if (!task.debug) {
     if (!dres) {
@@ -127,6 +136,11 @@ TargetWindow.prototype.setUpPreloadedListener = function(task, onDone) {
   ipc.once('window-loaded', function() {
     log.debug('IPC', 'window-loaded');
     log.debug('SEND', 'ensure-rendered');
+
+    ipc.once('variable-signel',function(){
+      log.debug('IPC', 'variable-signel');
+      return onDone(true);
+    });
 
     ipc.once('loaded', function() {
       log.debug('IPC', 'loaded');
@@ -265,6 +279,16 @@ TargetWindow.prototype.insertCSS = function(css) {
 
 TargetWindow.prototype.executeJS = function(js) {
   this.window.webContents.executeJavaScript(js);
+};
+
+TargetWindow.prototype.waitFor = function(v) {
+  this.window.webContents.executeJavaScript(
+      `Object.keys(document.location)`,
+      false,
+      res => {
+       console.log(res);
+       });
+  console.log("done waitfor");
 };
 
 TargetWindow.prototype.close = function() {

@@ -8,7 +8,7 @@ module.exports = function(tasks) {
     return function(done) {
       log.debug(task);
 
-      targetWindow.initialize(task, function() {
+      targetWindow.initialize(task, function(flag) {
         // --css
         if (task.css) {
           (Array.isArray(task.css) ? task.css : [ task.css ]).forEach(function(css) {
@@ -21,23 +21,28 @@ module.exports = function(tasks) {
             targetWindow.executeJS(js);
           });
         }
+        
+        targetWindow.waitFor('renderingDone');
 
-        if (task.format === 'pdf') {
-          targetWindow.pdf(done);
-        } else if (task.selector) {
-          targetWindow.getDimensions(task.selector, function(dims) {
-            targetWindow.capture(dims, done);
-          });
-        } else if (task.size.height > 0) {
-          targetWindow.capture({
-            x: 0,
-            y: 0,
-            width: task.size.width,
-            height: task.size.height,
-          }, done);
-        } else {
-          targetWindow.capture(false, done);
+        if (flag) {
+          if (task.format === 'pdf') {
+            targetWindow.pdf(done);
+          } else if (task.selector) {
+            targetWindow.getDimensions(task.selector, function (dims) {
+              targetWindow.capture(dims, done);
+            });
+          } else if (task.size.height > 0) {
+            targetWindow.capture({
+              x: 0,
+              y: 0,
+              width: task.size.width,
+              height: task.size.height,
+            }, done);
+          } else {
+            targetWindow.capture(false, done);
+          }
         }
+        
       });
     };
   }), function() {
