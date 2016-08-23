@@ -7,9 +7,10 @@ module.exports = function(tasks) {
   var targetWindow = new TargetWindow();
   parallel(1, tasks.map(function(task, i) {
     return function(done) {
-      log.debug(task);
+      //log.debug(task);
 
       targetWindow.initialize(task, function(flag) {
+        console.log("windows -- onDone -- flag:" + flag);
         // --css
         if (task.css) {
           (Array.isArray(task.css) ? task.css : [ task.css ]).forEach(function(css) {
@@ -23,7 +24,7 @@ module.exports = function(tasks) {
           });
         }
 
-        if (flag) {
+        if (flag==="success") {
           log.debug('Elapsed Time:' + (Date.now() - startTime)/1000);
           if (task.format === 'pdf') {
             targetWindow.pdf(done);
@@ -41,6 +42,9 @@ module.exports = function(tasks) {
           } else {
             targetWindow.capture(false, done);
           }
+        }  else if (flag==="failed") {
+          console.log("Failed to take the image");
+          done();
         }
         
       });

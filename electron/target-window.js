@@ -2,8 +2,6 @@ var fs = require('fs'),
     os = require('os'),
     path = require('path');
 
-//const ipcMain = require('electron');
-
 var ipc = require('ipc'),
     BrowserWindow = require('browser-window'),
     xtend = require('xtend');
@@ -133,7 +131,18 @@ TargetWindow.prototype.setUpPreloadedListener = function(task, onDone) {
     ipc.once('variable-signal',function(event,info){
       log.debug('IPC', 'variable-signal');
       log.debug('retries', info.retries);
-      return onDone(true);
+      return onDone("success");
+    });
+
+    ipc.once('load-error',function(){
+      log.debug('IPC', 'load-error');
+      return onDone("failed");
+    });
+
+    ipc.once('max-retries',function(event,info) {
+      log.debug('IPC', 'max-retries');
+      log.debug('retries', info.retries);
+      return onDone("failed");
     });
 
     ipc.once('loaded', function() {

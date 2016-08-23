@@ -1,21 +1,29 @@
 var ipc = require('ipc');
 var webFrame = require('web-frame');
 
-console.log("In preload");
+var electronMaxRetries = 400;
+var electronDoneRetries = 0;
 
-function MTQCheckDone(){
-  console.log(renderingDone);
-  console.log(doneRetries);
-  console.log(maxRetries);
-
-  if (renderingDone===false && doneRetries<maxRetries) {
-    doneRetries++; setTimeout(MTQCheckDone, 100);
-  } else {
-    console.log('SEND', 'variable-signal');
-    ipc.send('variable-signal',{'retries':doneRetries});
-  }
+window.onerror = function (errorMsg, url, lineNumber) {
+  console.log('SEND', 'load-error');
+  ipc.send('load-error');
 };
 
+function MTQCheckDone(){
+  if (electronDoneRetries >= electronMaxRetries) {
+    console.log('SEND', 'max-retries');
+    ipc.send('max-retries',{'retries':electronDoneRetries});
+  } else if (typeof renderingDone === "undefined") {
+    console.log('MTQCheckDone', 'renderingDone-undefined',electronDoneRetries);
+    electronDoneRetries++; setTimeout(MTQCheckDone, 100);
+  } else if (renderingDone === false) {
+    console.log('MTQCheckDone', 'renderingDone-false',electronDoneRetries);
+    electronDoneRetries++; setTimeout(MTQCheckDone, 100);
+  } else {
+    console.log('SEND', 'variable-signal');
+    ipc.send('variable-signal',{'retries':electronDoneRetries});
+  }
+}
 MTQCheckDone();
 
 function waitFor(num, onDone) {
