@@ -1,7 +1,7 @@
 var ipc = require('ipc');
 var webFrame = require('web-frame');
 
-var electronMaxRetries = 400;
+var electronMaxRetries = 800;
 var electronDoneRetries = 0;
 
 window.onerror = function (errorMsg, url, lineNumber) {
