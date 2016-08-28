@@ -2,7 +2,7 @@ var fs = require('fs'),
     os = require('os'),
     path = require('path');
 
-var ipc = require('ipc'),
+var ipc = require("electron").ipcMain,
     BrowserWindow = require('browser-window'),
     xtend = require('xtend');
 
@@ -21,13 +21,13 @@ TargetWindow.prototype.initialize = function(task, onDone) {
   var browserOpts = {
     show: true,
     // SEGFAULTS on linux (!) with Electron 0.33.7 (!!)
-    'enable-larger-than-screen': (os.platform() !== 'linux'),
-    'skip-taskbar': true,
-    'use-content-size': true,
+    'enableLargerThanScreen': (os.platform() !== 'linux'),
+    'skipTaskbar': true,
+    'useContentSize': true,
     frame: (task.debug ? true : false),
-    'web-preferences': {
-      'overlay-scrollbars': false,
-      'page-visibility': true,
+    'webPreferences': {
+      'overlayScrollbars': false,
+      'pageVisibility': true,
     }
   };
 
@@ -64,7 +64,8 @@ TargetWindow.prototype.initialize = function(task, onDone) {
     //this.window.setMaximumSize(task.device.screenSize.width, task.device.screenSize.height);
   }
 
-  this.window.loadUrl(task.url, task['user-agent'] !== '' ? { userAgent: task['user-agent'] } : {});
+  this.window.loadURL(task.url, task['user-agent'] !== '' ? { userAgent: task['user-agent'] } : {});
+  this.window.webContents.openDevTools();
   // this happens before the page starts executing
   if (task.device) {
     this.window.webContents.enableDeviceEmulation(task.device);

@@ -51,7 +51,7 @@ module.exports = function(tasks) {
     };
   }), function() {
     if (targetWindow) {
-      targetWindow.close();
+      //targetWindow.close();
     }
   });
 };
