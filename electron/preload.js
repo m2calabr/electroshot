@@ -1,5 +1,6 @@
 var ipc = require("electron").ipcRenderer
-var webFrame = require('web-frame');
+const {webFrame} = require('electron');
+//var webFrame = require('web-frame');
 
 var electronMaxRetries = 10;
 var electronDoneRetries = 0;
@@ -24,7 +25,7 @@ function MTQCheckDone(){
     ipc.send('variable-signal',{'retries':electronDoneRetries});
   }
 }
-MTQCheckDone();
+//MTQCheckDone();
 
 function waitFor(num, onDone) {
   if (num) {

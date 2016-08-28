@@ -2,7 +2,10 @@ var fs = require('fs'),
     path = require('path');
     ml = require('minilog');
 
-var app = require('app'),
+const electron = require('electron');
+const app = electron.app;
+
+var //app = require('app'),
     subarg = require('subarg');
 
 var argv = subarg(process.argv.slice(2));

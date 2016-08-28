@@ -3,7 +3,7 @@ var fs = require('fs'),
     path = require('path');
 
 var ipc = require("electron").ipcMain,
-    BrowserWindow = require('browser-window'),
+    BrowserWindow = require("electron").BrowserWindow,
     xtend = require('xtend');
 
 var log = require('minilog')('electron');
@@ -17,7 +17,8 @@ function TargetWindow() {
 // sync initialization
 TargetWindow.prototype.initialize = function(task, onDone) {
   var self = this;
-  var display = require('screen');
+  var display = require("electron").Screen;
+  const electron = require('electron')
   var browserOpts = {
     show: true,
     // SEGFAULTS on linux (!) with Electron 0.33.7 (!!)
@@ -33,7 +34,7 @@ TargetWindow.prototype.initialize = function(task, onDone) {
 
   if (!task.debug) {
     if (!dres) {
-      dres = display.getPrimaryDisplay().workAreaSize;
+      dres = electron.screen.getPrimaryDisplay().workAreaSize;
     }
     // Workaround for https://github.com/atom/electron/issues/2610
     browserOpts.x = dres.width;
@@ -159,12 +160,12 @@ TargetWindow.prototype.setUpPreloadedListener = function(task, onDone) {
           self.window.setSize(task.size.width, dims.height);
           // wait another 2 frames
           ipc.once('loaded', function() {
-            onDone();
+            onDone("success");
           });
           self.window.webContents.send('ensure-rendered', 0, 'loaded');
           return;
         }
-        onDone();
+        onDone("success");
       });
       self.window.webContents.send('get-content-dimensions');
     });

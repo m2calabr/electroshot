@@ -24,7 +24,7 @@ module.exports = function(tasks) {
           });
         }
 
-        if (flag==="success") {
+        if (true || flag==="success") {
           log.debug('Elapsed Time:' + (Date.now() - startTime)/1000);
           if (task.format === 'pdf') {
             targetWindow.pdf(done);
@@ -51,7 +51,7 @@ module.exports = function(tasks) {
     };
   }), function() {
     if (targetWindow) {
-      //targetWindow.close();
+      targetWindow.close();
     }
   });
 };
