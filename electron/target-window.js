@@ -29,6 +29,7 @@ TargetWindow.prototype.initialize = function(task, onDone) {
     'webPreferences': {
       'overlayScrollbars': false,
       'pageVisibility': true,
+      'webaudio' :false
     }
   };
 
