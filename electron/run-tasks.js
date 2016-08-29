@@ -7,7 +7,6 @@ module.exports = function(tasks) {
   var targetWindow = new TargetWindow();
   parallel(1, tasks.map(function(task, i) {
     return function(done) {
-      //log.debug(task);
 
       targetWindow.initialize(task, function(flag) {
         console.log("windows -- onDone -- flag:" + flag);
@@ -24,7 +23,7 @@ module.exports = function(tasks) {
           });
         }
 
-        if (true || flag==="success") {
+        if (flag==="success") {
           log.debug('Elapsed Time:' + (Date.now() - startTime)/1000);
           if (task.format === 'pdf') {
             targetWindow.pdf(done);

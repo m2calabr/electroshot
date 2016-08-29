@@ -1,31 +1,45 @@
 var ipc = require("electron").ipcRenderer
-const {webFrame} = require('electron');
-//var webFrame = require('web-frame');
+const webFrame = require('electron');
 
-var electronMaxRetries = 10;
-var electronDoneRetries = 0;
+//options
+var electronMaxRetries = 1000,
+    electronDoneRetries = 0,
+    waitForVarName = "renderingDone",
+    waitForVar = false,
+    debugShot = false;
 
+//If we get an error when loading -- we are done. TODO: make an option
 window.onerror = function (errorMsg, url, lineNumber) {
-  console.log('SEND', 'load-error');
+  if (debugShot) console.log('SEND', 'load-error');
   ipc.send('load-error');
 };
 
-function MTQCheckDone(){
+//We could hang for a lot of reasons, make sure we don't hang in an infinate loop
+function MaxTimeOut() {
   if (electronDoneRetries >= electronMaxRetries) {
-    console.log('SEND', 'max-retries');
+    if (debugShot) console.log('SEND', 'max-retries');
     ipc.send('max-retries',{'retries':electronDoneRetries});
-  } else if (typeof renderingDone === "undefined") {
-    console.log('MTQCheckDone', 'renderingDone-undefined',electronDoneRetries);
-    electronDoneRetries++; setTimeout(MTQCheckDone, 100);
-  } else if (renderingDone === false) {
-    console.log('MTQCheckDone', 'renderingDone-false',electronDoneRetries);
-    electronDoneRetries++; setTimeout(MTQCheckDone, 100);
   } else {
-    console.log('SEND', 'variable-signal');
-    ipc.send('variable-signal',{'retries':electronDoneRetries});
+    //if (debugShot) console.log('electronDoneRetries', electronDoneRetries);
+    setTimeout(MaxTimeOut, 100);
+    electronDoneRetries++;
   }
 }
-//MTQCheckDone();
+
+//Are we waiting for a global var to turn true
+function CheckForDoneVar(){
+   if (typeof window[waitForVarName] === "undefined") {
+     // console.log('CheckForDoneVar', waitForVarName + '-undefined',electronDoneRetries);
+     setTimeout(CheckForDoneVar, 100);
+  } else if (window[waitForVarName] === false) {
+     //console.log('CheckForDoneVar', waitForVarName + '-false',electronDoneRetries);
+     setTimeout(CheckForDoneVar, 100);
+  } else {
+     if (debugShot) console.log('SEND', 'variable-signal');
+     ipc.send('variable-signal',{'retries':electronDoneRetries});
+  }
+}
+
 
 function waitFor(num, onDone) {
   if (num) {
@@ -41,7 +55,8 @@ function waitFor(num, onDone) {
     });
   });
 }
-ipc.on('ensure-rendered', function ensureRendered(delay, eventName) {
+
+ipc.on('ensure-rendered', function ensureRendered(e, delay, eventName) {
   console.log('RECEIVE', 'ensure-rendered');
   try {
     var style = document.createElement('style');
@@ -52,13 +67,13 @@ ipc.on('ensure-rendered', function ensureRendered(delay, eventName) {
   } catch (e) {}
 
   waitFor(delay, function() {
-    console.log('SEND', eventName);
+    if (debugShot) console.log('SEND', eventName);
     ipc.send(eventName);
   });
 });
 
-ipc.on('get-dimensions', function ensureRendered(selector) {
-  console.log('get-dimensions', selector);
+ipc.on('get-dimensions', function ensureRendered(e,selector) {
+  if (debugShot) console.log('get-dimensions', selector);
   var result;
   try {
    result = document.querySelector(selector).getBoundingClientRect();
@@ -71,7 +86,7 @@ ipc.on('get-dimensions', function ensureRendered(selector) {
     x: result.top,
     y: result.left,
     width: result.right - result.left,
-    height: result.bottom - result.top,
+    height: result.bottom - result.top
   });
 });
 
@@ -81,14 +96,26 @@ ipc.on('get-content-dimensions', function() {
                          document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight );
   ipc.send('return-content-dimensions', {
     width: window.innerWidth,
-    height: height,
+    height: height
   });
 });
 
-ipc.on('set-zoom-factor', function(factor) {
-  console.log('set-zoom-factor', factor);
+ipc.on('set-zoom-factor', function(e,factor) {
+  if (debugShot) console.log('set-zoom-factor', factor);
   webFrame.setZoomFactor(factor);
   ipc.send('return-zoom-factor');
+});
+
+ipc.on('set-options', function(e,values) {
+
+  electronMaxRetries = values.maxTimeOut;
+  debugShot = values.debug;
+  waitForVar = values.waitForVar;
+  waitForVarName = values.waitVarName;
+  console.log('set-options', values);
+
+  if (waitForVar) CheckForDoneVar();
+  if (electronMaxRetries !== 'disabled') MaxTimeOut();
 });
 
 console.log('SEND', 'window-loaded');

@@ -5,8 +5,7 @@ var fs = require('fs'),
 const electron = require('electron');
 const app = electron.app;
 
-var //app = require('app'),
-    subarg = require('subarg');
+var subarg = require('subarg');
 
 var argv = subarg(process.argv.slice(2));
 if (argv.v || argv.version) {

@@ -17,8 +17,8 @@ function TargetWindow() {
 // sync initialization
 TargetWindow.prototype.initialize = function(task, onDone) {
   var self = this;
-  var display = require("electron").Screen;
-  const electron = require('electron')
+  var display = require('electron').Screen;
+  const electron = require('electron');
   var browserOpts = {
     show: true,
     // SEGFAULTS on linux (!) with Electron 0.33.7 (!!)
@@ -54,20 +54,23 @@ TargetWindow.prototype.initialize = function(task, onDone) {
       // when you should delete the corresponding element.
       self.window = null;
     });
+    self.window.webContents.on('did-finish-load', function() {
+      log.debug('IPC', 'did-finish-load');
+    });
   }
 
   // width, height
+  if (task.debug) task.size.width += 400; //allow for the size of the debug area.
   this.window.setContentSize(task.size.width, task.size.height || 768);
 
 
   if (task.device) {
     // useful: set the size exactly (contentsize is not useful here)
     this.window.setSize(task.device.screenSize.width, task.device.screenSize.height);
-    //this.window.setMaximumSize(task.device.screenSize.width, task.device.screenSize.height);
   }
 
   this.window.loadURL(task.url, task['user-agent'] !== '' ? { userAgent: task['user-agent'] } : {});
-  this.window.webContents.openDevTools();
+  if (task.debug) this.window.webContents.openDevTools();
   // this happens before the page starts executing
   if (task.device) {
     this.window.webContents.enableDeviceEmulation(task.device);
@@ -88,7 +91,7 @@ TargetWindow.prototype.initialize = function(task, onDone) {
   var has = {
     latency: typeof task.latency === 'number',
     download: typeof task.download === 'number',
-    upload: typeof task.upload === 'number',
+    upload: typeof task.upload === 'number'
   };
 
   var hasThrottling = has.latency || has.download || has.upload;
@@ -127,9 +130,11 @@ TargetWindow.prototype.completeInit = function(task, onDone) {
 
 TargetWindow.prototype.setUpPreloadedListener = function(task, onDone) {
   var self = this;
+  var onDoneAction = 'success';
+
   ipc.once('window-loaded', function() {
     log.debug('IPC', 'window-loaded');
-    log.debug('SEND', 'ensure-rendered');
+
 
     ipc.once('variable-signal',function(event,info){
       log.debug('IPC', 'variable-signal');
@@ -148,28 +153,16 @@ TargetWindow.prototype.setUpPreloadedListener = function(task, onDone) {
       return onDone("failed");
     });
 
-    ipc.once('loaded', function() {
-      log.debug('IPC', 'loaded');
+    log.debug('SEND', 'set-options');
+    var options = {
+      maxTimeOut: task.maxTimeOut,
+      debug:task.debug,
+      waitForVar: task.waitFor,
+      waitVarName: task.waitForName
+    };
+    self.window.webContents.send('set-options', options);
 
-      if (task.size.height > 0) {
-        return onDone();
-      }
-      // ensure window is sized to full content ...
-      ipc.once('return-content-dimensions', function(event, dims) {
-        if (dims.height > task.size.height) {
-          console.log('Increasing window size to ' + task.size.width + 'x' + dims.height);
-          self.window.setSize(task.size.width, dims.height);
-          // wait another 2 frames
-          ipc.once('loaded', function() {
-            onDone("success");
-          });
-          self.window.webContents.send('ensure-rendered', 0, 'loaded');
-          return;
-        }
-        onDone("success");
-      });
-      self.window.webContents.send('get-content-dimensions');
-    });
+
 
     // webContents configuration
     // - zoom factor
@@ -177,14 +170,45 @@ TargetWindow.prototype.setUpPreloadedListener = function(task, onDone) {
       log.debug('SEND', 'set-zoom-factor', task['zoom-factor']);
       self.window.webContents.send('set-zoom-factor', task['zoom-factor']);
       ipc.once('return-zoom-factor', function() {
+        log.debug('SEND', 'ensure-rendered zoom-factor != 1 ');
         self.window.webContents.send('ensure-rendered', task.delay, 'loaded');
       });
     } else {
+      log.debug('SEND', 'ensure-rendered zoom-factor == 1 ');
       self.window.webContents.send('ensure-rendered', task.delay, 'loaded');
     }
+
+    ipc.once('loaded', function() {
+      log.debug('IPC', 'loaded');
+
+      if (task.size.height > 0) {
+        return onDone("pass");
+      }
+
+      //If we are waiting for a javascript variable, we need to complete the following, but not be done.
+      if (task.waitFor) onDoneAction = "pass";
+
+      // ensure window is sized to full content ...
+      ipc.once('return-content-dimensions', function(event, dims) {
+        if (dims.height > task.size.height) {
+          console.log('Increasing window size to ' + task.size.width + 'x' + dims.height);
+          self.window.setSize(task.size.width, dims.height);
+          // wait another 2 frames
+          ipc.once('loaded', function() {
+            onDone(onDoneAction);
+          });
+          log.debug('SEND', 'ensure-rendered');
+          self.window.webContents.send('ensure-rendered', 0, 'loaded');
+          return;
+        }
+        onDone(onDoneAction);
+      });
+      self.window.webContents.send('get-content-dimensions');
+
+    });
+
   });
 };
-
 
 TargetWindow.prototype.reset = function() {
   var self = this;
