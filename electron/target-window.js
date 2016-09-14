@@ -119,12 +119,16 @@ TargetWindow.prototype.completeInit = function(task, onDone) {
     // executeJavaScript runs after the page is loaded, so we cannot use it with delays (!)
     // Note that zoom-factor and selector are incompatible ...
     setTimeout(function() {
-      onDone();
+      onDone('success');
     }, task.delay);
   } else {
     this.setUpPreloadedListener(task, onDone);
     // to work around https://github.com/atom/electron/issues/1580
     this.window.webContents.executeJavaScript(fs.readFileSync(path.resolve(__dirname + '/preload.js'), 'utf8'), false);
+    //setup a max timeout in case the javascript in the window tread halts.
+    setTimeout(function() {
+      onDone('success');
+    }, (task.maxTimeOut*100)+1000); //adding a one second buffer before we kill it.
   }
 };
 

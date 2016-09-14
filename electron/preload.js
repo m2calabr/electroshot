@@ -1,6 +1,7 @@
-var ipc = require("electron").ipcRenderer
+var ipc = require("electron").ipcRenderer;
 const webFrame = require('electron');
 
+window.alert = function () {};
 //options
 var electronMaxRetries = 1000,
     electronDoneRetries = 0,

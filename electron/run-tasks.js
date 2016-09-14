@@ -36,7 +36,7 @@ module.exports = function(tasks) {
               x: 0,
               y: 0,
               width: task.size.width,
-              height: task.size.height,
+              height: task.size.height
             }, done);
           } else {
             targetWindow.capture(false, done);
